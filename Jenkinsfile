@@ -12,7 +12,8 @@ pipeline {
                 sh '''
                     echo "Starting build..."
                     python --version
-                    pip install -r requirements.txt
+                    pip install --upgrade pip
+                    pip install --user -r requirements.txt  # Fix for permissions
                     echo "Build complete."
                 '''
             }
@@ -32,8 +33,9 @@ pipeline {
                     writeFile file: 'Dockerfile', text: '''
                     FROM python:3.11-alpine
                     WORKDIR /app
-                    COPY requirements.txt . 
-                    RUN pip install --no-cache-dir --user -r requirements.txt  # Fix for permissions
+                    RUN mkdir -p /root/.local && chmod -R 777 /root/.local
+                    COPY requirements.txt .
+                    RUN pip install --no-cache-dir --user -r requirements.txt
                     COPY . .
                     CMD ["python", "app.py"]
                     '''.stripIndent()
