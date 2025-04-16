@@ -13,7 +13,7 @@ pipeline {
                     echo "Starting build..."
                     python --version
                     pip install --upgrade pip
-                    pip install --user -r requirements.txt  # Fix for permissions
+                    pip install -r requirements.txt
                     echo "Build complete."
                 '''
             }
