@@ -2,7 +2,7 @@ pipeline {
     agent {
         docker {
             image 'python:3.11-alpine'
-            args '-u root'  // So pip installs won't hit permission errors
+            args '-u root'
         }
     }
 
@@ -15,7 +15,6 @@ pipeline {
             steps {
                 echo 'Building..'
                 sh '''
-                cd myapp
                 pip install --no-cache-dir -r requirements.txt
                 '''
             }
@@ -25,7 +24,6 @@ pipeline {
             steps {
                 echo 'Testing..'
                 sh '''
-                cd myapp
                 python hello.py
                 python hello.py --name=Brad
                 '''
