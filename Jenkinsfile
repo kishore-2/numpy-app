@@ -5,11 +5,7 @@ pipeline {
             reuseNode true
         }
     }
-
-    environment {
-        DOCKER_IMAGE = "bpkk/numpy-app:latest"
-    }
-
+    
     stages {
         stage('Build') {
             steps {
@@ -17,12 +13,11 @@ pipeline {
                     echo "Starting build..."
                     python --version
                     pip install --upgrade pip
-                    pip install -r requirements.txt
+                    pip install --user -r requirements.txt  # Fix for permissions
                     echo "Build complete."
                 '''
             }
         }
-
         stage('Test') {
             steps {
                 sh '''
@@ -32,31 +27,41 @@ pipeline {
                 '''
             }
         }
-
         stage('Deliver') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                    sh '''
-                        echo "Building Docker image..."
-                        docker build -t ${DOCKER_IMAGE} .
+                script {
+                    writeFile file: 'Dockerfile', text: '''
+                    FROM python:3.11-alpine
+                    WORKDIR /app
+                    COPY requirements.txt . 
+                    RUN pip install --no-cache-dir --user -r requirements.txt  # Fix for permissions
+                    COPY . .
+                    CMD ["python", "app.py"]
+                    '''.stripIndent()
 
-                        echo "Logging in to Docker Hub..."
-                        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh '''
+                            echo "Building Docker image..."
+                            docker build -t ${DOCKER_IMAGE} .
 
-                        echo "Pushing image to Docker Hub..."
-                        docker push ${DOCKER_IMAGE}
-                    '''
+                            echo "Logging in to Docker Hub..."
+                            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
+                            echo "Pushing image to Docker Hub..."
+                            docker push ${DOCKER_IMAGE}
+                        '''
+                    }
                 }
             }
         }
     }
-
+    
     post {
         success {
-            echo '✅ Pipeline completed successfully. Docker image delivered.'
+            echo 'Pipeline completed successfully.'
         }
         failure {
-            echo '❌ Pipeline failed. Check the logs for more info.'
+            echo 'Pipeline failed. Please review the logs.'
         }
     }
 }
