@@ -13,27 +13,30 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                echo 'Building..'
+                echo '------------Building..------------'
                 sh '''
                 pip install --no-cache-dir -r requirements.txt
                 '''
+                echo '----------------------------------'
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Testing..'
+                echo '------------Testing..------------'
                 sh '''
                 python test.py
                 python test.py --name=Brad
                 '''
+                echo '---------------------------------'
             }
         }
 
         stage('Deliver') {
             steps {
-                echo 'Deploying...'
+                echo '------------Deploying...------------'
                 sh 'echo "App deployed successfully."'
+                echo '------------------------------------'
             }
         }
     }
